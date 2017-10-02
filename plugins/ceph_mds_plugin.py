@@ -19,14 +19,14 @@
 #   Ricardo Rocha <ricardo@catalyst.net.nz>
 #
 # About this plugin:
-#   This plugin collects information regarding Ceph Monitors.
+#   This plugin collects information regarding Ceph mds.
 #
 # collectd:
 #   http://collectd.org
 # collectd-python:
 #   http://collectd.org/documentation/manpages/collectd-python.5.shtml
-# ceph mons:
-#   http://ceph.com/docs/master/rados/operations/monitoring/#checking-monitor-status
+# ceph mdss:
+#   http://ceph.com/docs/master/rados/operations/mdsitoring/#checking-mdsitor-status
 #
 
 import collectd
@@ -36,45 +36,41 @@ import subprocess
 
 import base
 
-class CephMonPlugin(base.Base):
+class CephMdsPlugin(base.Base):
 
     def __init__(self):
         base.Base.__init__(self)
         self.prefix = 'ceph'
 
     def get_stats(self):
-        """Retrieves stats from ceph mons"""
+        """Retrieves stats from ceph mdss"""
 
         ceph_cluster = "%s-%s" % (self.prefix, self.cluster)
 
-        data = { ceph_cluster: { 'mon': { 'number': 0, 'quorum': 0, 'health': 0 } } }
+        data = { ceph_cluster: { 'mds': { 'number': 0} } }
         output = None
         try:
-            cephmoncmdline='ceph mon dump --format json --cluster ' + self.cluster
-            cephmoncmdhealth='ceph status --format json --cluster ' + self.cluster
-            output = subprocess.check_output(cephmoncmdline, shell=True)
-            output_health = subprocess.check_output(cephmoncmdhealth, shell=True)
+            cephmdscmdline='ceph mds dump --format json --cluster ' + self.cluster
+            output = subprocess.check_output(cephmdscmdline, shell=True)
         except Exception as exc:
-            collectd.error("ceph-mon: failed to ceph mon dump :: %s :: %s"
+            collectd.error("ceph-mds: failed to ceph mds dump :: %s :: %s"
                     % (exc, traceback.format_exc()))
             return
 
         if output is None:
-            collectd.error('ceph-mon: failed to ceph mon dump :: output was None')
+            collectd.error('ceph-mds: failed to ceph mds dump :: output was None')
 
         json_data = json.loads(output)
-        json_data_health = json.loads(output_health)
 
-        data[ceph_cluster]['mon']['number'] = len(json_data['mons'])
-        data[ceph_cluster]['mon']['quorum'] = len(json_data['quorum'])
-        data[ceph_cluster]['mon']['health'] = 1 if json_data_health['health']['overall_status'].lower() == 'health_ok' else 0
+        data[ceph_cluster]['mds']['number'] = len(json_data['info'])
+        #data[ceph_cluster]['mds']['quorum'] = len(json_data['quorum'])
 
         return data
 
 try:
-    plugin = CephMonPlugin()
+    plugin = CephMdsPlugin()
 except Exception as exc:
-    collectd.error("ceph-mon: failed to initialize ceph mon plugin :: %s :: %s"
+    collectd.error("ceph-mds: failed to initialize ceph mds plugin :: %s :: %s"
             % (exc, traceback.format_exc()))
 
 def configure_callback(conf):
