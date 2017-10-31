@@ -47,7 +47,7 @@ class CephMonPlugin(base.Base):
 
         ceph_cluster = "%s-%s" % (self.prefix, self.cluster)
 
-        data = { ceph_cluster: { 'mon': { 'number': 0, 'quorum': 0, 'health': 0 } } }
+        data = { ceph_cluster: { 'mon': { 'number': 0, 'quorum': 0, 'health': 0, 'warn': 0, 'error': 0, } } }
         output = None
         try:
             cephmoncmdline='ceph mon dump --format json --cluster ' + self.cluster
