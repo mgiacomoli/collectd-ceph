@@ -76,8 +76,13 @@ class CephPGPlugin(base.Base):
             data[ceph_cluster][osd_id]['kb_total'] = osd['kb']
             data[ceph_cluster][osd_id]['snap_trim_queue_len'] = osd['snap_trim_queue_len']
             data[ceph_cluster][osd_id]['num_snap_trimming'] = osd['num_snap_trimming']
-            data[ceph_cluster][osd_id]['apply_latency_ms'] = osd['fs_perf_stat']['apply_latency_ms']
-            data[ceph_cluster][osd_id]['commit_latency_ms'] = osd['fs_perf_stat']['commit_latency_ms']
+            
+            # Json output changed in ceph luminous
+            # fs_perf_stat is now perf_stat
+            #data[ceph_cluster][osd_id]['apply_latency_ms'] = osd['fs_perf_stat']['apply_latency_ms']
+            #data[ceph_cluster][osd_id]['commit_latency_ms'] = osd['fs_perf_stat']['commit_latency_ms']
+            data[ceph_cluster][osd_id]['apply_latency_ms'] = osd['perf_stat']['apply_latency_ms']
+            data[ceph_cluster][osd_id]['commit_latency_ms'] = osd['perf_stat']['commit_latency_ms']
 
         return data
 

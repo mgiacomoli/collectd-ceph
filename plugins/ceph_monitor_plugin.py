@@ -67,9 +67,15 @@ class CephMonPlugin(base.Base):
 
         data[ceph_cluster]['mon']['number'] = len(json_data['mons'])
         data[ceph_cluster]['mon']['quorum'] = len(json_data['quorum'])
-        data[ceph_cluster]['mon']['health'] = 1 if json_data_health['health']['overall_status'].lower() == 'health_ok' else 0
-        data[ceph_cluster]['mon']['warn'] = 1 if json_data_health['health']['overall_status'].lower() == 'health_warn' else 0
-        data[ceph_cluster]['mon']['error'] = 1 if json_data_health['health']['overall_status'].lower() == 'health_err' else 0
+        
+        # Comment the following 3 lines because ceph luminous changed the json output
+        # No more overall_status key. Replaced with status. 
+        # data[ceph_cluster]['mon']['health'] = 1 if json_data_health['health']['overall_status'].lower() == 'health_ok' else 0
+        # data[ceph_cluster]['mon']['warn'] = 1 if json_data_health['health']['overall_status'].lower() == 'health_warn' else 0
+        # data[ceph_cluster]['mon']['error'] = 1 if json_data_health['health']['overall_status'].lower() == 'health_err' else 0
+        data[ceph_cluster]['mon']['health'] = 1 if json_data_health['health']['status'].lower() == 'health_ok' else 0
+        data[ceph_cluster]['mon']['warn'] = 1 if json_data_health['health']['status'].lower() == 'health_warn' else 0
+        data[ceph_cluster]['mon']['error'] = 1 if json_data_health['health']['status'].lower() == 'health_err' else 0
 
         return data
 
