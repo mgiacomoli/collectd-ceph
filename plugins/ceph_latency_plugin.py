@@ -30,6 +30,7 @@
 #
 
 import collectd
+import json
 import traceback
 import subprocess
 
@@ -48,25 +49,50 @@ class CephLatencyPlugin(base.Base):
 
         data = { ceph_cluster: {} }
 
-        output = None
         try:
-            output = subprocess.check_output(
-              "timeout 30s rados --cluster "+ self.cluster +" -p data bench 10 write -t 1 -b 65536 2>/dev/null | grep -i latency | awk '{print 1000*$3}'", shell=True)
+            osd_pools='ceph osd pool ls -f json --cluster ' + self.cluster
+            pools_output = subprocess.check_output(osd_pools, shell=True)
         except Exception as exc:
             collectd.error("ceph-latency: failed to run rados bench :: %s :: %s"
                     % (exc, traceback.format_exc()))
             return
 
-        if output is None:
-            collectd.error('ceph-latency: failed to run rados bench :: output was None')
+        if pools_output is None:
+            collectd.error('ceph-latency: failed to run rados bench :: pools_output was None')
+            return
 
-        results = output.split('\n')
-        # push values
-        data[ceph_cluster]['cluster'] = {}
-        data[ceph_cluster]['cluster']['avg_latency'] = results[0]
-        data[ceph_cluster]['cluster']['stddev_latency'] = results[1]
-        data[ceph_cluster]['cluster']['max_latency'] = results[2]
-        data[ceph_cluster]['cluster']['min_latency'] = results[3]
+        json_pools = json.loads(pools_output)
+
+        output = None
+        latency_data = {}
+        for pool in json_pools:
+            try:
+                output = subprocess.check_output(
+                  "timeout 30s rados --cluster "+ self.cluster +" -p "+ pool +" bench 10 write -t 1 -b 65536 2>/dev/null | grep -i latency | awk '{print 1000*$3}'", shell=True)
+            except Exception as exc:
+                collectd.error("ceph-latency: failed to run rados bench for pool %s :: %s :: %s"
+                        % (pool, exc, traceback.format_exc()))
+                continue
+
+            if output is None:
+                collectd.error('ceph-latency: failed to run rados bench :: output for pool '+ pool +' was None')
+                continue
+
+            latency_data[pool] = output
+
+        # exit if all rados bench failed
+        if len(latency_data) == 0:
+            return
+
+        for pool_key, pool_data in latency_data.items():
+
+            results = pool_data.split('\n')
+            # push values
+            data[ceph_cluster][pool_key] = {}
+            data[ceph_cluster][pool_key]['avg_latency'] = results[0]
+            data[ceph_cluster][pool_key]['stddev_latency'] = results[1]
+            data[ceph_cluster][pool_key]['max_latency'] = results[2]
+            data[ceph_cluster][pool_key]['min_latency'] = results[3]
 
         return data
 
@@ -86,4 +112,3 @@ def read_callback():
 
 collectd.register_config(configure_callback)
 collectd.register_read(read_callback, plugin.interval)
-
