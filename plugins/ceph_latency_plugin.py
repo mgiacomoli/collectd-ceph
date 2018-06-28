@@ -68,7 +68,7 @@ class CephLatencyPlugin(base.Base):
         for pool in json_pools:
             try:
                 output = subprocess.check_output(
-                  "timeout 30s rados --cluster "+ self.cluster +" -p "+ pool +" bench 10 write -t 1 -b 65536 2>/dev/null | grep -i latency | awk '{print 1000*$3}'", shell=True)
+                  "timeout 30s rados --cluster "+ self.cluster +" -p "+ pool +" bench 5 write -t 1 -b 65536 2>/dev/null | grep -i latency | awk '{print 1000*$3}'", shell=True)
             except Exception as exc:
                 collectd.error("ceph-latency: failed to run rados bench for pool %s :: %s :: %s"
                         % (pool, exc, traceback.format_exc()))
@@ -89,10 +89,10 @@ class CephLatencyPlugin(base.Base):
             results = pool_data.split('\n')
             # push values
             data[ceph_cluster][pool_key] = {}
-            data[ceph_cluster][pool_key]['avg_latency'] = results[0]
-            data[ceph_cluster][pool_key]['stddev_latency'] = results[1]
-            data[ceph_cluster][pool_key]['max_latency'] = results[2]
-            data[ceph_cluster][pool_key]['min_latency'] = results[3]
+            data[ceph_cluster][pool_key]['write_avg_latency'] = results[0]
+            data[ceph_cluster][pool_key]['write_stddev_latency'] = results[1]
+            data[ceph_cluster][pool_key]['write_max_latency'] = results[2]
+            data[ceph_cluster][pool_key]['write_min_latency'] = results[3]
 
         return data
 
