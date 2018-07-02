@@ -84,8 +84,9 @@ class CephLatencyPlugin(base.Base):
         if len(latency_data) == 0:
             return
 
-        for pool_key, pool_data in latency_data.items():
+        for pool_name, pool_data in latency_data.items():
 
+            pool_key = 'pool-{}'.format(pool_name)
             results = pool_data.split('\n')
             # push values
             data[ceph_cluster][pool_key] = {}
